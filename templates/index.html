@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Movie Recommendation System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
+  <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl w-full max-w-xl p-8 text-white">
+    <h1 class="text-3xl font-extrabold text-center mb-2">🎬 Movie Recommendation System</h1>
+    <p class="text-center text-slate-200 mb-6">
+      Type a movie name and get similar movie suggestions.
+    </p>
+
+    <div class="space-y-4 mb-6">
+      <div>
+        <label class="block mb-1 text-sm font-medium text-slate-200">Movie name</label>
+        <input
+          id="movieInput"
+          type="text"
+          placeholder="e.g. Avatar, Inception, Titanic"
+          class="w-full px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-1 text-sm font-medium text-slate-200">Number of recommendations</label>
+        <input
+          id="kInput"
+          type="number"
+          min="1"
+          max="10"
+          value="5"
+          class="w-full px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+
+    <button
+      id="submitBtn"
+      class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 transition transform font-semibold shadow-lg flex items-center justify-center gap-2"
+    >
+      <span>Get Recommendations</span>
+      <span id="loader" class="hidden animate-spin border-2 border-white/60 border-t-transparent rounded-full h-4 w-4"></span>
+    </button>
+
+    <div id="message" class="mt-4 text-sm text-center text-red-300"></div>
+
+    <div class="mt-6">
+      <h2 class="text-xl font-semibold mb-3">Results</h2>
+      <ul id="results" class="space-y-2 text-slate-100"></ul>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById("submitBtn");
+    const loader = document.getElementById("loader");
+    const msg = document.getElementById("message");
+    const resultsEl = document.getElementById("results");
+
+    btn.addEventListener("click", async () => {
+      const movie = document.getElementById("movieInput").value.trim();
+      const k = parseInt(document.getElementById("kInput").value, 10) || 5;
+
+      msg.textContent = "";
+      resultsEl.innerHTML = "";
+
+      if (!movie) {
+        msg.textContent = "Please enter a movie name.";
+        return;
+      }
+
+      btn.disabled = true;
+      loader.classList.remove("hidden");
+
+      try {
+        const res = await fetch("/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ movie_name: movie, k })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          msg.textContent = data.error;
+          return;
+        }
+
+        resultsEl.innerHTML = "";
+        data.recommendations.forEach((title, index) => {
+          const li = document.createElement("li");
+          li.className = "bg-slate-800/70 border border-slate-600 rounded-lg px-3 py-2 shadow";
+          li.textContent = `⭐ ${index + 1}. ${title}`;
+          resultsEl.appendChild(li);
+        });
+      } catch (err) {
+        msg.textContent = "Something went wrong. Please try again.";
+      } finally {
+        btn.disabled = false;
+        loader.classList.add("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
